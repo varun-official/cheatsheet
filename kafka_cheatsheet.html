@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kafka Cheatsheet</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #1a1a24;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8e8f0;
+    --muted: #888899;
+    --purple: #a78bfa;
+    --teal: #2dd4bf;
+    --coral: #fb7185;
+    --amber: #fbbf24;
+    --green: #4ade80;
+    --blue: #60a5fa;
+    --code-bg: #0d0d14;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 14px;
+  }
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px;
+  }
+
+  /* HEADER */
+  header {
+    border-bottom: 1px solid var(--border2);
+    padding-bottom: 28px;
+    margin-bottom: 36px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  header h1 {
+    font-size: 42px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--purple) 0%, var(--teal) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  header p {
+    color: var(--muted);
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* SECTION TITLES */
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+    padding-left: 2px;
+  }
+
+  /* GRID LAYOUTS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+  @media (max-width: 800px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 500px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .card h3 {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card p, .card li {
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .card ul { list-style: none; padding: 0; }
+  .card ul li::before { content: "→ "; color: var(--teal); font-size: 11px; }
+
+  /* DOTS / BADGES */
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .dot-purple { background: var(--purple); }
+  .dot-teal   { background: var(--teal); }
+  .dot-coral  { background: var(--coral); }
+  .dot-amber  { background: var(--amber); }
+  .dot-green  { background: var(--green); }
+  .dot-blue   { background: var(--blue); }
+
+  .badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .badge-purple { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .badge-teal   { background: rgba(45,212,191,0.12);  color: var(--teal); }
+  .badge-coral  { background: rgba(251,113,133,0.12); color: var(--coral); }
+  .badge-amber  { background: rgba(251,191,36,0.12);  color: var(--amber); }
+  .badge-green  { background: rgba(74,222,128,0.12);  color: var(--green); }
+
+  /* CODE BLOCKS */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 8px 0;
+  }
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    line-height: 1.8;
+    color: #c9d1d9;
+  }
+  .kw  { color: #ff7b72; }
+  .str { color: #a5d6ff; }
+  .cmt { color: #484f58; }
+  .num { color: var(--amber); }
+  .fn  { color: var(--teal); }
+  .var { color: var(--purple); }
+
+  /* TABLES */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    margin: 8px 0;
+  }
+  th {
+    text-align: left;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border2);
+  }
+  td {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    color: var(--text);
+  }
+  td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: var(--teal);
+    white-space: nowrap;
+  }
+  tr:last-child td { border-bottom: none; }
+
+  /* FLOW DIAGRAM */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 14px 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+  .flow-box {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .flow-arrow { color: var(--muted); font-size: 16px; }
+
+  /* RULE CARDS */
+  .rule {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+  .rule-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--purple);
+    background: rgba(167,139,250,0.1);
+    padding: 3px 7px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .rule-text { font-size: 12.5px; color: var(--muted); }
+  .rule-text strong { color: var(--text); font-weight: 700; }
+
+  /* SECTION DIVIDER */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 32px 0;
+  }
+
+  /* HIGHLIGHT BOX */
+  .highlight {
+    border-left: 3px solid var(--purple);
+    background: rgba(167,139,250,0.05);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .highlight strong { color: var(--purple); }
+
+  /* OFFSET TRACK */
+  .offset-track {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 10px 0;
+  }
+  .offset-box {
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-align: center;
+    min-width: 52px;
+  }
+  .offset-read { background: rgba(45,212,191,0.12); color: var(--teal); border: 1px solid rgba(45,212,191,0.2); }
+  .offset-unread { background: var(--bg3); color: var(--muted); border: 1px solid var(--border); }
+  .offset-current { background: rgba(251,191,36,0.15); color: var(--amber); border: 1px solid rgba(251,191,36,0.3); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div>
+      <h1>Kafka Cheatsheet</h1>
+      <p style="margin-top:6px;">Complete reference — from basics to production patterns</p>
+    </div>
+    <div style="text-align:right;">
+      <span class="badge badge-teal">Python</span>
+      <span class="badge badge-purple" style="margin-left:4px;">confluent-kafka</span>
+    </div>
+  </header>
+
+  <!-- CORE CONCEPTS -->
+  <div class="section-title">Core Concepts</div>
+  <div class="grid-4" style="margin-bottom:8px;">
+    <div class="card">
+      <h3><span class="dot dot-purple"></span> Topic</h3>
+      <ul>
+        <li>Named stream of messages</li>
+        <li>Like a DB table but append-only</li>
+        <li>Split into partitions</li>
+        <li>Multiple consumers can read</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="dot dot-teal"></span> Partition</h3>
+      <ul>
+        <li>Ordered, immutable log</li>
+        <li>One message → one partition</li>
+        <li>Partition count = max parallelism</li>
+        <li>Same key → same partition always</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="dot dot-amber"></span> Offset</h3>
+      <ul>
+        <li>Position number in a partition</li>
+        <li>Starts at 0, increments forever</li>
+        <li>Stored in __consumer_offsets</li>
+        <li>Survives consumer crashes</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="dot dot-coral"></span> Broker</h3>
+      <ul>
+        <li>A Kafka server / machine</li>
+        <li>Holds partition data on disk</li>
+        <li>Cluster = multiple brokers</li>
+        <li>Only need 1 address to connect</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE FLOW -->
+  <div class="flow">
+    <div class="flow-box" style="background:rgba(45,212,191,0.12);color:var(--teal);">Producer</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box" style="background:rgba(167,139,250,0.12);color:var(--purple);">Topic (Partitions)</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box" style="background:rgba(251,113,133,0.12);color:var(--coral);">Consumer Group</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box" style="background:rgba(251,191,36,0.12);color:var(--amber);">Your App Logic</div>
+    <div style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);">hash(key) % partitions = target partition</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- PARTITION RULES -->
+  <div class="section-title">Partition + Consumer Group Rules</div>
+  <div class="rule"><span class="rule-num">R1</span><div class="rule-text"><strong>One partition → one consumer</strong> within a group at any time. Never shared.</div></div>
+  <div class="rule"><span class="rule-num">R2</span><div class="rule-text"><strong>Instances = Partitions</strong> is the sweet spot. Extra instances sit idle. Too few = one instance handles multiple partitions.</div></div>
+  <div class="rule"><span class="rule-num">R3</span><div class="rule-text"><strong>Different groups</strong> each get a full independent copy of all messages. Same group = work is divided.</div></div>
+  <div class="rule"><span class="rule-num">R4</span><div class="rule-text"><strong>Partition count = max parallelism.</strong> Adding instances beyond partition count gives zero throughput gain.</div></div>
+  <div class="rule" style="margin-bottom:24px;"><span class="rule-num">R5</span><div class="rule-text"><strong>Set partitions generously upfront</strong> (6, 12, 24). Increasing later requires careful planning.</div></div>
+
+  <!-- OFFSET VISUAL -->
+  <div class="section-title">Offset — Consumer Bookmark</div>
+  <div class="card" style="margin-bottom:24px;">
+    <div class="offset-track">
+      <div class="offset-box offset-read">[0]<br><span style="font-size:9px;color:var(--muted)">read</span></div>
+      <div class="offset-box offset-read">[1]<br><span style="font-size:9px;color:var(--muted)">read</span></div>
+      <div class="offset-box offset-read">[2]<br><span style="font-size:9px;color:var(--muted)">read</span></div>
+      <div class="offset-box offset-current">[3] ←<br><span style="font-size:9px;">committed</span></div>
+      <div class="offset-box offset-unread">[4]<br><span style="font-size:9px;color:var(--muted)">pending</span></div>
+      <div class="offset-box offset-unread">[5]<br><span style="font-size:9px;color:var(--muted)">pending</span></div>
+      <div style="margin-left:12px;font-size:12px;color:var(--muted);">Consumer crashes → restarts from offset 3 → no data lost</div>
+    </div>
+    <table style="margin-top:10px;">
+      <tr><th>Setting</th><th>Behaviour</th></tr>
+      <tr><td>auto.offset.reset: earliest</td><td>Start from very first message if no saved offset</td></tr>
+      <tr><td>auto.offset.reset: latest</td><td>Start from new messages only</td></tr>
+      <tr><td>enable.auto.commit: true</td><td>Commits every 5s automatically — fast but risky</td></tr>
+      <tr><td>enable.auto.commit: false</td><td>You call consumer.commit(msg) manually — safe</td></tr>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- PRODUCER -->
+  <div class="section-title">Producer</div>
+  <div class="grid-2">
+    <div>
+      <pre><code><span class="kw">from</span> confluent_kafka <span class="kw">import</span> Producer
+<span class="kw">import</span> json
+
+producer = <span class="fn">Producer</span>({
+    <span class="str">'bootstrap.servers'</span>: <span class="str">'localhost:9092'</span>,
+    <span class="str">'acks'</span>: <span class="str">'all'</span>,            <span class="cmt"># safest</span>
+    <span class="str">'enable.idempotence'</span>: <span class="kw">True</span>  <span class="cmt"># no duplicates on retry</span>
+})
+
+<span class="kw">def</span> <span class="fn">on_delivery</span>(err, msg):
+    <span class="kw">if</span> err: <span class="fn">print</span>(<span class="str">f'Failed: {err}'</span>)
+    <span class="kw">else</span>: <span class="fn">print</span>(<span class="str">f'offset {msg.offset()}'</span>)
+
+<span class="cmt"># add to buffer (non-blocking)</span>
+producer.<span class="fn">produce</span>(
+    topic=<span class="str">'orders'</span>,
+    key=<span class="str">'user-42'</span>,          <span class="cmt"># same key → same partition</span>
+    value=json.<span class="fn">dumps</span>(order),
+    callback=on_delivery
+)
+producer.<span class="fn">poll</span>(<span class="num">0</span>)            <span class="cmt"># trigger callbacks</span>
+producer.<span class="fn">flush</span>()            <span class="cmt"># wait for all — always at end</span></code></pre>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:12px;">
+        <h3 style="margin-bottom:10px;">Producer methods</h3>
+        <table>
+          <tr><th>Method</th><th>Blocking</th><th>What it does</th></tr>
+          <tr><td>produce()</td><td style="color:var(--green)">No</td><td>Adds to local buffer</td></tr>
+          <tr><td>poll(0)</td><td style="color:var(--green)">No</td><td>Triggers send + callbacks</td></tr>
+          <tr><td>poll(1.0)</td><td style="color:var(--amber)">Up to 1s</td><td>Waits + triggers</td></tr>
+          <tr><td>flush()</td><td style="color:var(--coral)">Yes</td><td>Send all, wait for acks</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:10px;">Producer acks</h3>
+        <table>
+          <tr><th>acks</th><th>Safety</th><th>Speed</th></tr>
+          <tr><td>0</td><td style="color:var(--coral)">None — can lose msgs</td><td style="color:var(--green)">Fastest</td></tr>
+          <tr><td>1</td><td style="color:var(--amber)">Leader only</td><td style="color:var(--amber)">Fast</td></tr>
+          <tr><td>all</td><td style="color:var(--green)">All ISR confirm</td><td style="color:var(--coral)">Slower</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- CONSUMER -->
+  <div class="section-title">Consumer</div>
+  <div class="grid-2">
+    <div>
+      <pre><code><span class="kw">from</span> confluent_kafka <span class="kw">import</span> Consumer, KafkaException
+
+consumer = <span class="fn">Consumer</span>({
+    <span class="str">'bootstrap.servers'</span>: <span class="str">'localhost:9092'</span>,
+    <span class="str">'group.id'</span>: <span class="str">'order-processor'</span>, <span class="cmt"># team name</span>
+    <span class="str">'auto.offset.reset'</span>: <span class="str">'earliest'</span>,
+    <span class="str">'enable.auto.commit'</span>: <span class="kw">False</span>,      <span class="cmt"># manual = safer</span>
+    <span class="str">'partition.assignment.strategy'</span>: <span class="str">'cooperative-sticky'</span>
+})
+
+consumer.<span class="fn">subscribe</span>([<span class="str">'orders'</span>])
+
+<span class="kw">try</span>:
+    <span class="kw">while</span> <span class="kw">True</span>:
+        msg = consumer.<span class="fn">poll</span>(timeout=<span class="num">1.0</span>)
+        <span class="kw">if</span> msg <span class="kw">is None</span>: <span class="kw">continue</span>
+        <span class="kw">if</span> msg.<span class="fn">error</span>(): <span class="kw">raise</span> <span class="fn">KafkaException</span>(msg.<span class="fn">error</span>())
+
+        order = json.<span class="fn">loads</span>(msg.<span class="fn">value</span>())
+        <span class="fn">process</span>(order)           <span class="cmt"># your logic</span>
+        consumer.<span class="fn">commit</span>(msg)    <span class="cmt"># commit AFTER processing</span>
+<span class="kw">finally</span>:
+    consumer.<span class="fn">close</span>()            <span class="cmt"># always close cleanly</span></code></pre>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:12px;">
+        <h3 style="margin-bottom:10px;">Consumer group partition assignment</h3>
+        <table>
+          <tr><th>Scenario</th><th>Result</th></tr>
+          <tr><td>Instances = Partitions</td><td style="color:var(--green)">Perfect — 1 each</td></tr>
+          <tr><td>Instances &lt; Partitions</td><td style="color:var(--amber)">Some get 2+ partitions</td></tr>
+          <tr><td>Instances &gt; Partitions</td><td style="color:var(--coral)">Extra instances idle</td></tr>
+          <tr><td>Instance crashes</td><td style="color:var(--teal)">Kafka auto-rebalances</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:10px;">Rebalance strategies</h3>
+        <table>
+          <tr><th>Strategy</th><th>Behaviour</th></tr>
+          <tr><td>eager (old)</td><td>ALL consumers stop then reassign — causes downtime</td></tr>
+          <tr><td>cooperative-sticky</td><td>Only moved partitions pause — zero downtime</td></tr>
+        </table>
+        <div style="margin-top:8px;font-size:11.5px;color:var(--teal);">→ Always use cooperative-sticky in production</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- REPLICATION + ISR -->
+  <div class="section-title">Replication + ISR</div>
+  <div class="grid-3" style="margin-bottom:16px;">
+    <div class="card">
+      <h3><span class="dot dot-teal"></span> Leader</h3>
+      <ul>
+        <li>Main copy of partition</li>
+        <li>All reads + writes go here</li>
+        <li>One per partition at a time</li>
+        <li>Elected from ISR on crash</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="dot dot-purple"></span> Follower</h3>
+      <ul>
+        <li>Silent copy of partition</li>
+        <li>Constantly syncs from leader</li>
+        <li>Does not serve reads/writes</li>
+        <li>Becomes leader if in ISR</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="dot dot-amber"></span> ISR</h3>
+      <ul>
+        <li>In-Sync Replicas list</li>
+        <li>Followers fully caught up</li>
+        <li>Lag behind → removed from ISR</li>
+        <li>Only ISR members can lead</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:24px;">
+    <table>
+      <tr><th>Replication Factor</th><th>Brokers needed</th><th>Can survive</th></tr>
+      <tr><td>1</td><td>1</td><td style="color:var(--coral)">Nothing — data lost on crash</td></tr>
+      <tr><td>2</td><td>2</td><td style="color:var(--amber)">1 broker crash</td></tr>
+      <tr><td>3 (recommended)</td><td>3</td><td style="color:var(--green)">2 brokers crashing simultaneously</td></tr>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- RELIABILITY PATTERNS -->
+  <div class="section-title">Delivery Guarantees + Dead Letter Queue</div>
+  <div class="grid-3" style="margin-bottom:16px;">
+    <div class="card">
+      <h3 style="color:var(--amber);">At most once</h3>
+      <p style="margin-bottom:8px;">commit → process</p>
+      <ul>
+        <li>Crash after commit = message lost</li>
+        <li>Use for: logs, click tracking</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--teal);">At least once</h3>
+      <p style="margin-bottom:8px;">process → commit</p>
+      <ul>
+        <li>Crash before commit = processed twice</li>
+        <li>Use for: most app events</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--green);">Exactly once</h3>
+      <p style="margin-bottom:8px;">atomic transaction</p>
+      <ul>
+        <li>Never lost, never doubled</li>
+        <li>Use for: payments, inventory</li>
+      </ul>
+    </div>
+  </div>
+  <div class="grid-2">
+    <pre><code><span class="cmt"># Exactly-once producer config</span>
+producer = <span class="fn">Producer</span>({
+    <span class="str">'acks'</span>: <span class="str">'all'</span>,
+    <span class="str">'enable.idempotence'</span>: <span class="kw">True</span>,
+    <span class="str">'transactional.id'</span>: <span class="str">'my-producer-1'</span>
+})
+producer.<span class="fn">init_transactions</span>()
+producer.<span class="fn">begin_transaction</span>()
+producer.<span class="fn">produce</span>(<span class="str">'orders'</span>, value=data)
+producer.<span class="fn">commit_transaction</span>()  <span class="cmt"># or abort_transaction()</span>
+
+<span class="cmt"># Exactly-once consumer config</span>
+consumer = <span class="fn">Consumer</span>({
+    <span class="str">'isolation.level'</span>: <span class="str">'read_committed'</span>
+})</code></pre>
+    <pre><code><span class="cmt"># Dead Letter Queue pattern</span>
+MAX_RETRIES = <span class="num">3</span>
+
+<span class="kw">for</span> attempt <span class="kw">in</span> <span class="fn">range</span>(MAX_RETRIES):
+    <span class="kw">try</span>:
+        <span class="fn">process</span>(msg)
+        consumer.<span class="fn">commit</span>(msg)
+        <span class="kw">break</span>
+    <span class="kw">except</span> Exception <span class="kw">as</span> e:
+        <span class="kw">if</span> attempt == MAX_RETRIES - <span class="num">1</span>:
+            <span class="cmt"># all retries exhausted → DLQ</span>
+            dlq_producer.<span class="fn">produce</span>(
+                topic=<span class="str">'orders-dlq'</span>,
+                value=json.<span class="fn">dumps</span>({
+                    <span class="str">'original'</span>: msg.<span class="fn">value</span>().<span class="fn">decode</span>(),
+                    <span class="str">'error'</span>: <span class="fn">str</span>(e)
+                })
+            )
+            consumer.<span class="fn">commit</span>(msg)  <span class="cmt"># move on</span></code></pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- RETENTION + LOG COMPACTION -->
+  <div class="section-title">Message Retention + Log Compaction</div>
+  <div class="grid-2">
+    <div>
+      <div class="highlight"><strong>Retention</strong> — delete messages by time or size. Default: 7 days. Messages stay whether read or not — this enables replay.</div>
+      <pre><code><span class="cmt"># Time-based retention (default 7 days)</span>
+config={<span class="str">'retention.ms'</span>: <span class="str">'604800000'</span>}
+
+<span class="cmt"># Size-based</span>
+config={<span class="str">'retention.bytes'</span>: <span class="str">'1073741824'</span>}  <span class="cmt"># 1GB</span>
+
+<span class="cmt"># Keep forever (careful with disk!)</span>
+config={<span class="str">'retention.ms'</span>: <span class="str">'-1'</span>}
+
+<span class="cmt"># Common retention by use case</span>
+<span class="cmt"># Logs:     3 days</span>
+<span class="cmt"># Orders:   30 days</span>
+<span class="cmt"># Activity: 7 days</span>
+<span class="cmt"># Audit:    1 year or forever</span></code></pre>
+    </div>
+    <div>
+      <div class="highlight"><strong>Log Compaction</strong> — keep only latest value per key. Use for user profiles, prices, config — anything where history doesn't matter, only current state does.</div>
+      <pre><code><span class="cmt"># Enable compaction</span>
+config={<span class="str">'cleanup.policy'</span>: <span class="str">'compact'</span>}
+
+<span class="cmt"># Before:  user-1:Mumbai  user-1:Pune  user-1:Bangalore</span>
+<span class="cmt"># After:   user-1:Bangalore  (only latest kept)</span>
+
+<span class="cmt"># Delete a key — send null (tombstone)</span>
+producer.<span class="fn">produce</span>(
+    topic=<span class="str">'user-profiles'</span>,
+    key=<span class="str">'user-3'</span>,
+    value=<span class="kw">None</span>  <span class="cmt"># ← tombstone = delete on compaction</span>
+)</code></pre>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SCHEMA REGISTRY -->
+  <div class="section-title">Schema Registry</div>
+  <div class="grid-2">
+    <div>
+      <div class="highlight"><strong>Schema Registry</strong> enforces message format contracts between producers and consumers. Prevents breaking changes. Uses Avro / Protobuf / JSON Schema.</div>
+      <pre><code>order_schema = <span class="str">"""
+{
+  "type": "record",
+  "name": "Order",
+  "fields": [
+    {"name": "order_id", "type": "int"},
+    {"name": "amount",   "type": "float"},
+    {"name": "item",     "type": "string"}
+  ]
+}
+"""</span>
+
+registry = <span class="fn">SchemaRegistryClient</span>({<span class="str">'url'</span>: <span class="str">'http://localhost:8081'</span>})
+serializer = <span class="fn">AvroSerializer</span>(registry, order_schema)
+producer.<span class="fn">produce</span>(topic=<span class="str">'orders'</span>, value=<span class="fn">serializer</span>(order))</code></pre>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:10px;">Compatibility modes</h3>
+      <table>
+        <tr><th>Mode</th><th>Meaning</th></tr>
+        <tr><td>BACKWARD</td><td>New schema can read old messages</td></tr>
+        <tr><td>FORWARD</td><td>Old schema can read new messages</td></tr>
+        <tr><td>FULL</td><td>Both directions safe</td></tr>
+        <tr><td>NONE</td><td>No checks — dangerous</td></tr>
+      </table>
+      <div style="margin-top:14px;" class="section-title">What's allowed in BACKWARD</div>
+      <ul style="list-style:none;padding:0;font-size:12px;color:var(--muted);">
+        <li style="padding:3px 0;"><span style="color:var(--green)">✓</span> Add optional field with default</li>
+        <li style="padding:3px 0;"><span style="color:var(--green)">✓</span> Remove a field</li>
+        <li style="padding:3px 0;"><span style="color:var(--coral)">✗</span> Rename a field</li>
+        <li style="padding:3px 0;"><span style="color:var(--coral)">✗</span> Change field type</li>
+        <li style="padding:3px 0;"><span style="color:var(--coral)">✗</span> Add required field without default</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- KRAFT + MONITORING + SECURITY -->
+  <div class="section-title">KRaft, Monitoring + Security</div>
+  <div class="grid-3">
+    <div class="card">
+      <h3><span class="dot dot-purple"></span> KRaft (Kafka 3.3+)</h3>
+      <ul>
+        <li>Zookeeper is removed (Kafka 4.0)</li>
+        <li>Coordination built into Kafka</li>
+        <li>Controller = cluster manager</li>
+        <li>Detects crashes, elects leaders</li>
+        <li>Updates all producers + consumers</li>
+      </ul>
+      <pre style="margin-top:10px;"><code style="font-size:10.5px;"><span class="cmt"># docker-compose</span>
+KAFKA_PROCESS_ROLES: broker,controller</code></pre>
+    </div>
+    <div class="card">
+      <h3><span class="dot dot-amber"></span> Monitoring</h3>
+      <pre style="margin-bottom:10px;"><code style="font-size:10.5px;"><span class="cmt"># check consumer lag</span>
+kafka-consumer-groups.sh \
+  --describe \
+  --group order-processor
+<span class="cmt"># LAG column = how far behind</span></code></pre>
+      <table>
+        <tr><th>Metric</th><th>Healthy</th></tr>
+        <tr><td>Consumer lag</td><td style="color:var(--green)">Near 0</td></tr>
+        <tr><td>Under-replicated</td><td style="color:var(--green)">0</td></tr>
+        <tr><td>Producer errors</td><td style="color:var(--green)">0%</td></tr>
+        <tr><td>Disk usage</td><td style="color:var(--green)">&lt; 70%</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3><span class="dot dot-coral"></span> Security</h3>
+      <pre><code style="font-size:10.5px;">producer = <span class="fn">Producer</span>({
+  <span class="str">'security.protocol'</span>: <span class="str">'SASL_SSL'</span>,
+  <span class="str">'sasl.mechanism'</span>: <span class="str">'PLAIN'</span>,
+  <span class="str">'sasl.username'</span>: <span class="str">'my-app'</span>,
+  <span class="str">'sasl.password'</span>: <span class="str">'secret'</span>,
+  <span class="str">'ssl.ca.location'</span>: <span class="str">'/certs/ca.pem'</span>
+})
+
+<span class="cmt"># ACL — restrict topic access</span>
+kafka-acls.sh --add \
+  --allow-principal User:order-svc \
+  --operation Write \
+  --topic orders</code></pre>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- KAFKA CONNECT + STREAMS -->
+  <div class="section-title">Kafka Connect + Streams + Backpressure</div>
+  <div class="grid-3">
+    <div class="card">
+      <h3><span class="dot dot-blue"></span> Kafka Connect</h3>
+      <p style="margin-bottom:8px;">Ready-made connectors — no code needed to sync Kafka with external systems.</p>
+      <table>
+        <tr><th>Connector</th><th>Does</th></tr>
+        <tr><td>Debezium</td><td>DB changes → Kafka</td></tr>
+        <tr><td>S3 Sink</td><td>Kafka → S3</td></tr>
+        <tr><td>Elasticsearch</td><td>Kafka → Search</td></tr>
+        <tr><td>JDBC Source</td><td>DB table → Kafka</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3><span class="dot dot-green"></span> Kafka Streams (Faust)</h3>
+      <pre><code style="font-size:10.5px;"><span class="kw">import</span> faust
+
+app = <span class="fn">faust.App</span>(<span class="str">'processor'</span>,
+    broker=<span class="str">'kafka://localhost:9092'</span>)
+
+orders = app.<span class="fn">topic</span>(<span class="str">'orders'</span>)
+high_val = app.<span class="fn">topic</span>(<span class="str">'high-value'</span>)
+
+<span class="kw">@</span>app.<span class="fn">agent</span>(orders)
+<span class="kw">async def</span> <span class="fn">process</span>(stream):
+    <span class="kw">async for</span> order <span class="kw">in</span> stream:
+        <span class="kw">if</span> order[<span class="str">'amount'</span>] > <span class="num">10000</span>:
+            <span class="kw">await</span> high_val.<span class="fn">send</span>(value=order)</code></pre>
+    </div>
+    <div class="card">
+      <h3><span class="dot dot-coral"></span> Backpressure + Lag</h3>
+      <p style="margin-bottom:8px;">Consumer slower than producer → lag grows in partition.</p>
+      <ul>
+        <li>Add more consumer instances (best)</li>
+        <li>Optimize processing code</li>
+        <li>Increase partition count</li>
+        <li>Monitor lag daily</li>
+      </ul>
+      <div style="margin-top:10px;padding:8px;background:var(--bg3);border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);">
+        Sends 1000/s · Handles 200/s<br>
+        <span style="color:var(--coral)">Lag +800/s → add instances</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- QUICK REFERENCE -->
+  <div class="section-title">Quick Config Reference</div>
+  <div class="grid-2">
+    <div class="card">
+      <h3 style="margin-bottom:10px;">Producer configs</h3>
+      <table>
+        <tr><th>Key</th><th>Recommended</th></tr>
+        <tr><td>bootstrap.servers</td><td>any one broker address</td></tr>
+        <tr><td>acks</td><td>all (production)</td></tr>
+        <tr><td>enable.idempotence</td><td>true</td></tr>
+        <tr><td>transactional.id</td><td>unique per instance (exactly-once)</td></tr>
+        <tr><td>queue.buffering.max.ms</td><td>5–50ms (batching)</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:10px;">Consumer configs</h3>
+      <table>
+        <tr><th>Key</th><th>Recommended</th></tr>
+        <tr><td>group.id</td><td>meaningful team name</td></tr>
+        <tr><td>auto.offset.reset</td><td>earliest (dev) / latest (prod)</td></tr>
+        <tr><td>enable.auto.commit</td><td>false (manual is safer)</td></tr>
+        <tr><td>isolation.level</td><td>read_committed (exactly-once)</td></tr>
+        <tr><td>partition.assignment.strategy</td><td>cooperative-sticky</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div style="margin-top:32px;padding:16px;background:var(--bg2);border-radius:10px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div style="font-size:12px;color:var(--muted);">
+      <span style="color:var(--text);font-weight:700;">Golden rules:</span>
+      &nbsp;Partitions = max parallelism &nbsp;·&nbsp; acks=all for important data &nbsp;·&nbsp; always flush() &nbsp;·&nbsp; commit after processing &nbsp;·&nbsp; every consumer needs a DLQ
+    </div>
+    <span class="badge badge-teal">pip install confluent-kafka</span>
+  </div>
+
+</div>
+</body>
+</html>
